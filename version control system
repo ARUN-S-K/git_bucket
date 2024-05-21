@@ -1,0 +1,74 @@
+@echo off
+
+if "%1"=="init" goto:init
+if "%1"=="add" goto:add
+if "%1"=="commit" goto:commit
+if "%1"=="log" goto :log
+
+
+:init
+if not exist "vcsfolder" (
+    mkdir vcsfolder
+    attrib +h +s +r "vcsfolder"
+    echo The repository is created locally.
+) else (
+    echo Repository already exists.
+)
+goto:eof
+
+:add
+if "%2"=="" (
+    echo Usage: add . or addfile [file_path]
+    goto:eof
+)
+
+if "%2"=="." (
+    goto:addallfile
+) else (
+    goto:addfile
+)
+
+:addallfile
+robocopy "." ".\addfolder" /e /xf /xd "vcsfolder" "addfolder" >nul
+attrib +h +s +r "addfolder"
+echo All files and folders copied to addfolder.
+goto:eof
+
+:addfile
+if "%2"=="" (
+    echo Usage: addfile [file_path]
+    goto:eof
+)else (
+    xcopy  /y "%2" ".\addfolder" > nul
+    attrib +h +s +r "addfolder"
+    echo File "%2" copied to addfolder.
+goto:eof)
+
+
+:commit
+if "%2"=="" (
+    for /f %%i in ('dir /a:d /s ".\vcsfolder" ^| find /c ":\"') do set count=%%i
+    attrib -h -s -r "addfolder"
+    ren "addfolder" "commit%count%"
+    move "commit%count%" "vcsfolder"
+    echo committed successfully
+) else (
+    for /f %%i in ('dir /a:d /s ".\vcsfolder" ^| find /c ":\"') do set count=%%i
+    attrib -h -s -r "addfolder"
+    ren "addfolder" "commit_%count%_%2"
+    move "commit_%count%_%2" "vcsfolder"
+    echo committed successfully
+)
+goto :eof
+
+:log
+cd vcsfolder
+for /F "delims=" %%I in ('dir * /A-D /B /O-D 2^>nul') do set "NewestFileTime=%%~tI" & goto NewestFileTime
+echo There is no file in current directory.
+exit /B
+
+:NewestFileTime
+echo Last modification time of newest file is: %NewestFileTime%  echo Last Modified:
+)
+cd ..
+goto :eof
